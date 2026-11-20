@@ -4,7 +4,7 @@ export const HZ = 60;
 export const SEAT = [5, 8];
 const EXIT = [3, 14];
 export const RETURN_TICKS = 105;
-export const WEEKLY_RULESET = 3;
+export const WEEKLY_RULESET = 4;
 export const HIDES = [
   { x: 15, y: 3, name: '밀가루 보관함', hint: '밀가루 자국이 주방의 하얀 보관함 아래에서 끊겨 있다.' },
   { x: 26, y: 4, name: '바퀴 선반', hint: '나란히 난 바퀴 자국이 창고 위쪽의 바퀴 선반까지 이어진다.' },
@@ -89,12 +89,17 @@ export function weeklyScenario(week) {
   };
 }
 
+const GUEST_WAVES = [1, 2, 3, 4, 5, 3];
+const GUEST_WAVE_TICKS = 6 * HZ;
+const guestCountAt = (tick) => GUEST_WAVES[Math.floor(tick / GUEST_WAVE_TICKS) % GUEST_WAVES.length];
+
 export function makeGame(scenario) {
   return {
     scenario, player: { x: SEAT[0], y: SEAT[1], facing: 'down' },
     mode: 'playing', tick: 0, suspicion: 0, caught: 0, seenClue: false,
     carrying: false, path: [], step: null, interaction: null, action: null,
     notice: '', noticeUntil: 0, rush: false, spotted: false,
+    guests: guestCountAt(0), patrolTick: scenario.offset,
     guard: guardAt(scenario.offset, scenario.tutorial), returnTick: 0,
   };
 }
@@ -150,10 +155,11 @@ function guardAt(tick, tutorial) {
       const dx = part.x - prior.x;
       const dy = part.y - prior.y;
       const ratio = time / part.time;
-      const [fx, fy] = Math.hypot(dx, dy) ? [dx, dy] : part.face;
+      const moving = dx !== 0 || dy !== 0;
+      const [fx, fy] = moving ? [dx, dy] : part.face;
       return {
         x: prior.x + dx * ratio, y: prior.y + dy * ratio,
-        angle: Math.atan2(fy, fx), rush: !!part.rush,
+        angle: Math.atan2(fy, fx), rush: !!part.rush, moving,
       };
     }
     time -= part.time;
@@ -274,7 +280,9 @@ export function advance(g) {
     if (g.tick - g.returnTick >= RETURN_TICKS) g.mode = 'won';
     return;
   }
-  g.guard = guardAt(g.tick + g.scenario.offset, g.scenario.tutorial);
+  g.guests = guestCountAt(g.tick);
+  g.patrolTick += g.guard.moving ? 1 + (g.guests - 1) * 0.1 : 1;
+  g.guard = guardAt(g.patrolTick, g.scenario.tutorial);
   g.rush = g.guard.rush;
   move(g);
   if (g.player.x === EXIT[0] && g.player.y === EXIT[1]) {

@@ -9,7 +9,8 @@ const scoreFile = process.env.HOEGAARDEN_SCORES_PATH || fileURLToPath(new URL('.
 const files = new Map([
   ['/', 'index.html'], ['/index.html', 'index.html'], ['/style.css', 'style.css'],
   ...['game', 'paint', 'play'].map((name) => ['/' + name + '.mjs', name + '.mjs']),
-  ...['hairdresser', 'carrying', 'chef', 'chef-back', 'walk-side', 'walk-up', 'walk-down', 'carry-side', 'carry-up', 'carry-down']
+  ...['hairdresser', 'carrying', 'chef', 'chef-back', 'walk-side', 'walk-up', 'walk-down', 'carry-side', 'carry-up', 'carry-down',
+    'guest-rabbit', 'guest-chipmunk', 'guest-mouse']
     .map((name) => ['/assets/' + name + '.webp', 'assets/' + name + '.webp']),
 ]);
 const mime = { html: 'text/html; charset=utf-8', css: 'text/css; charset=utf-8', mjs: 'text/javascript; charset=utf-8', webp: 'image/webp' };

@@ -10,8 +10,16 @@ const COLORS = {
   cream: '#f6ddaa', edge: '#4b2f27', wood: '#a8704b', dark: '#433332',
   mint: '#6d8e78', gold: '#ffdb93', red: '#a4493c',
 };
+const GUEST_SEATS = [
+  { name: 'guest-rabbit', x: 2.4, y: 4.5 },
+  { name: 'guest-chipmunk', x: 5.6, y: 5.15, flip: true },
+  { name: 'guest-mouse', x: 2.3, y: 6.85 },
+  { name: 'guest-rabbit', x: 5.35, y: 9.65 },
+  { name: 'guest-chipmunk', x: 6.85, y: 11.05, flip: true },
+];
 const assets = Object.fromEntries(
-  ['hairdresser', 'chef', 'chef-back', 'walk-side', 'walk-up', 'walk-down', 'carry-side', 'carry-up', 'carry-down'].map((name) => {
+  ['hairdresser', 'chef', 'chef-back', 'walk-side', 'walk-up', 'walk-down', 'carry-side', 'carry-up', 'carry-down',
+    'guest-rabbit', 'guest-chipmunk', 'guest-mouse'].map((name) => {
     const sprite = new Image();
     sprite.src = './assets/' + name + '.webp';
     return [name, sprite];
@@ -305,6 +313,7 @@ export function draw(canvas, g, menu = false, cursor = null) {
   const back = Math.sin(guard.angle) < -0.35;
   const bob = g.step ? Math.abs(Math.sin(g.tick / 4)) * 2.5 : 0;
   const figures = [
+    ...GUEST_SEATS.slice(0, g.guests).map(({name, x, y, flip}) => ({sprite: assets[name], x, y, height: 38, flip, bob: 0})),
     { sprite, x: p.x, y: p.y, height: 61, flip: p.facing === 'left', bob },
     { sprite: assets[back ? 'chef-back' : 'chef'], x: guard.x, y: guard.y, height: 64, flip: Math.cos(guard.angle) < -0.25, bob: 0 },
   ];

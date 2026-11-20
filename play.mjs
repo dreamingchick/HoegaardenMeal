@@ -117,6 +117,8 @@ function renderHud() {
   visible('warning', show && game.caught === 1);
   copy('phase', !show ? '버너 찾기' : game.carrying ? '미용실로 귀환' : game.seenClue ? '버너 찾기' : '흔적 조사');
   const running = scene === 'game' && game?.mode === 'playing';
+  visible('guests', show && game.mode === 'playing');
+  if (show) copy('guests', '손님 ' + game.guests + '명');
   visible('rush', running && game.rush);
   visible('danger', running && game.suspicion > 0);
   if (running) byId('meter').value = game.suspicion;
