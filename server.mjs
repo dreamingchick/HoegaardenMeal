@@ -2,7 +2,7 @@ import { createServer } from 'node:http';
 import { createHash } from 'node:crypto';
 import { readFile, writeFile, rename } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
-import { HZ, advance, giveOrder, makeGame, weekStart, weeklyScenario } from './game.mjs';
+import { HZ, WEEKLY_RULESET, advance, giveOrder, makeGame, weekStart, weeklyScenario } from './game.mjs';
 
 const root = new URL('./', import.meta.url);
 const scoreFile = process.env.HOEGAARDEN_SCORES_PATH || fileURLToPath(new URL('./.weekly-scores.json', root));
@@ -26,8 +26,9 @@ function json(res, code, body) {
   res.writeHead(code, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
   res.end(JSON.stringify(body));
 }
+const scoreKey = (week) => week + ':v' + WEEKLY_RULESET;
 function board(week) {
-  return Object.values(scores[week] || {})
+  return Object.values(scores[scoreKey(week)] || {})
     .sort((a, b) => a.ticks - b.ticks || a.recorded - b.recorded)
     .slice(0, 25).map(({ name, ticks }) => ({ name, ticks }));
 }
@@ -61,9 +62,10 @@ function verify({ week, ticks, controls }) {
 function persist(week, player, name, ticks) {
   const job = writes.then(async () => {
     if (week !== weekStart()) return null;
-    const prior = scores[week]?.[player];
+    const key = scoreKey(week);
+    const prior = scores[key]?.[player];
     if (prior && prior.ticks <= ticks) return false;
-    const updated = { ...scores, [week]: { ...scores[week], [player]: { name, ticks, recorded: Date.now() } } };
+    const updated = { ...scores, [key]: { ...scores[key], [player]: { name, ticks, recorded: Date.now() } } };
     const temp = scoreFile + '.tmp';
     await writeFile(temp, JSON.stringify(updated), { mode: 0o600 });
     await rename(temp, scoreFile);
@@ -84,7 +86,7 @@ async function handle(req, res) {
     const name = typeof data?.name === 'string' ? data.name.trim() : '';
     const week = weekStart();
     if (!data || !name || Array.from(name).length > 16 || /[\p{C}\p{Zl}\p{Zp}]/u.test(name)
-      || typeof data.profile !== 'string' || !/^[a-f0-9-]{32,36}$/i.test(data.profile) || data.week !== week || !verify(data)) {
+      || typeof data.profile !== 'string' || !/^[a-f0-9-]{32,36}$/i.test(data.profile) || data.week !== week || data.ruleset !== WEEKLY_RULESET || !verify(data)) {
       return json(res, 400, { error: 'invalid-score' });
     }
     const player = createHash('sha256').update(data.profile).digest('hex');

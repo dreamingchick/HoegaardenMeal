@@ -4,6 +4,7 @@ export const HZ = 60;
 export const SEAT = [5, 8];
 const EXIT = [3, 14];
 export const RETURN_TICKS = 105;
+export const WEEKLY_RULESET = 2;
 export const HIDES = [
   { x: 15, y: 3, name: '밀가루 보관함', hint: '밀가루 자국이 주방의 하얀 보관함 아래에서 끊겨 있다.' },
   { x: 26, y: 4, name: '바퀴 선반', hint: '나란히 난 바퀴 자국이 창고 위쪽의 바퀴 선반까지 이어진다.' },
@@ -94,11 +95,11 @@ export function makeGame(scenario) {
     mode: 'playing', tick: 0, suspicion: 0, caught: 0, seenClue: false,
     carrying: false, path: [], step: null, interaction: null, action: null,
     notice: '', noticeUntil: 0, rush: false, spotted: false,
-    guard: guardAt(scenario.offset), returnTick: 0,
+    guard: guardAt(scenario.offset, scenario.tutorial), returnTick: 0,
   };
 }
 
-const PATROL = [
+const TUTORIAL_PATROL = [
   { time: 150, x: 12, y: 4, face: [0, 1] },
   { time: 100, x: 18, y: 4 },
   { time: 140, x: 18, y: 4, face: [0, -1] },
@@ -108,11 +109,23 @@ const PATROL = [
   { time: 205, x: 18, y: 4, face: [0, -1], rush: true },
   { time: 115, x: 12, y: 4, face: [-1, 0] },
 ];
-const PERIOD = PATROL.reduce((sum, part) => sum + part.time, 0);
-function guardAt(tick) {
-  let time = tick % PERIOD;
-  for (const [i, part] of PATROL.entries()) {
-    const prior = PATROL.at(i - 1);
+const PATROL = [
+  ...TUTORIAL_PATROL.slice(0, 5),
+  { time: 95, x: 20, y: 9 },
+  { time: 108, x: 15, y: 9 },
+  { time: 55, x: 15, y: 9, face: [0, 1] },
+  { time: 100, x: 20, y: 9 },
+  { time: 95, x: 20, y: 5 },
+  ...TUTORIAL_PATROL.slice(5),
+];
+const patrolLength = (route) => route.reduce((sum, part) => sum + part.time, 0);
+const TUTORIAL_PERIOD = patrolLength(TUTORIAL_PATROL);
+const PERIOD = patrolLength(PATROL);
+function guardAt(tick, tutorial) {
+  const route = tutorial ? TUTORIAL_PATROL : PATROL;
+  let time = tick % (tutorial ? TUTORIAL_PERIOD : PERIOD);
+  for (const [i, part] of route.entries()) {
+    const prior = route.at(i - 1);
     if (time < part.time) {
       const dx = part.x - prior.x;
       const dy = part.y - prior.y;
@@ -242,7 +255,7 @@ export function advance(g) {
     if (g.tick - g.returnTick >= RETURN_TICKS) g.mode = 'won';
     return;
   }
-  g.guard = guardAt(g.tick + g.scenario.offset);
+  g.guard = guardAt(g.tick + g.scenario.offset, g.scenario.tutorial);
   g.rush = g.guard.rush;
   move(g);
   if (g.player.x === EXIT[0] && g.player.y === EXIT[1]) {
@@ -255,7 +268,8 @@ export function advance(g) {
     [g.player.x, g.player.y] = [EXIT[0], 12];
   }
   g.spotted = danger(g.player) && inSight(g.player, g.guard);
-  g.suspicion = Math.min(1, Math.max(0, g.suspicion + (g.spotted ? 1 / 56 : -1 / 70)));
+  const detectionTicks = g.scenario.tutorial ? 56 : g.carrying ? 38 : 46;
+  g.suspicion = Math.min(1, Math.max(0, g.suspicion + (g.spotted ? 1 / detectionTicks : -1 / 70)));
   if (g.suspicion < 1) return;
   g.caught++;
   if (g.caught === 2) {

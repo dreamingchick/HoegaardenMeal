@@ -1,4 +1,4 @@
-import { WIDTH, HEIGHT, HZ, makeGame, advance, giveOrder, targetAt, weekStart, weeklyScenario, cluePosition } from './game.mjs';
+import { WIDTH, HEIGHT, HZ, WEEKLY_RULESET, makeGame, advance, giveOrder, targetAt, weekStart, weeklyScenario, cluePosition } from './game.mjs';
 import { draw } from './paint.mjs';
 
 const byId = (id) => document.getElementById(id);
@@ -54,7 +54,7 @@ function home() {
 }
 function randomIndex(count) { return Math.floor(Math.random() * count); }
 function pickNormal() {
-  if (tutorial) return { hide: 1, clue: 0, offset: 95 };
+  if (tutorial) return { hide: 1, clue: 0, offset: 95, tutorial: true };
   const choices = [0, 1, 2].filter((index) => index !== previousHide);
   previousHide = choices[randomIndex(choices.length)];
   return { hide: previousHide, clue: randomIndex(3), offset: randomIndex(420) };
@@ -214,7 +214,7 @@ byId('scoreForm').addEventListener('submit', async (event) => {
     const result = await request('score', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, profile, week: activeWeek, ticks: game.tick, controls }),
+      body: JSON.stringify({ name, profile, week: activeWeek, ruleset: WEEKLY_RULESET, ticks: game.tick, controls }),
     });
     save('nickname', name);
     if (viewVersion !== version) return;
