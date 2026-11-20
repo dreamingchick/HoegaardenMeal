@@ -5,10 +5,18 @@ export const SEAT = [5, 8];
 const EXIT = [3, 14];
 export const RETURN_TICKS = 105;
 export const WEEKLY_RULESET = 4;
+export const MAX_LEVEL = 10;
+export const LEVEL_HIDES = [
+  [0, 1, 2], [1, 2], [0, 2, 3], [1, 2, 3], [1, 3, 4],
+  [2, 3, 4], [1, 4, 5], [2, 4, 5], [3, 4, 5], [4, 5],
+];
 export const HIDES = [
   { x: 15, y: 3, name: '밀가루 보관함', hint: '밀가루 자국이 주방의 하얀 보관함 아래에서 끊겨 있다.' },
   { x: 26, y: 4, name: '바퀴 선반', hint: '나란히 난 바퀴 자국이 창고 위쪽의 바퀴 선반까지 이어진다.' },
   { x: 26, y: 11, name: '빨간 상자', hint: '빨간 페인트 조각이 창고 아래쪽 상자 앞에 떨어져 있다.' },
+  { x: 12, y: 3, name: '계산대 서랍', hint: '푸른 종잇조각이 계산대의 파란 서랍에서 찢겨 나온 것 같다.' },
+  { x: 19, y: 7, name: '양념 선반 아래 칸', hint: '노란 양념 가루가 주방 선반 오른쪽 아래 칸으로 이어진다.' },
+  { x: 25, y: 7, name: '창고 선반 안쪽 칸', hint: '자주색 천 조각이 창고 선반 안쪽의 보라색 수납칸에 걸려 있다.' },
 ];
 const CLUES = [[8, 4], [8, 10], [12, 10]];
 export const FIXTURES = [
@@ -19,7 +27,7 @@ export const FIXTURES = [
   { x: 18, y: 3, w: 3, h: 1, type: 'grill' },
   { x: 13, y: 6, w: 7, h: 2, type: 'shelf' },
   { x: 24, y: 6, w: 3, h: 2, type: 'shelf' },
-  ...HIDES.map((hide, id) => ({ ...hide, id, w: 1, h: 1, type: 'hide' })),
+  ...HIDES.slice(0, 3).map((hide, id) => ({ ...hide, id, w: 1, h: 1, type: 'hide' })),
 ];
 const WALLS = new Set();
 const key = (x, y) => y * WIDTH + x;
@@ -94,8 +102,13 @@ const GUEST_WAVE_TICKS = 6 * HZ;
 const guestCountAt = (tick) => GUEST_WAVES[Math.floor(tick / GUEST_WAVE_TICKS) % GUEST_WAVES.length];
 
 export function makeGame(scenario) {
+  const level = scenario.level ?? 1;
+  const increase = level - 1;
   return {
-    scenario, player: { x: SEAT[0], y: SEAT[1], facing: 'down' },
+    scenario, level, hides: [0, 1, 2, ...LEVEL_HIDES[level - 1].filter(id => id >= 3)],
+    guardSpeed: 1 + increase * 0.04, visionRange: VISION_RANGE + increase * 0.16,
+    visionSpread: VISION_SPREAD + increase * Math.PI / 180,
+    player: { x: SEAT[0], y: SEAT[1], facing: 'down' },
     mode: 'playing', tick: 0, suspicion: 0, caught: 0, seenClue: false,
     carrying: false, path: [], step: null, interaction: null, action: null,
     notice: '', noticeUntil: 0, rush: false, spotted: false,
@@ -177,13 +190,13 @@ export function visionDistance(guard, angle, limit = VISION_RANGE) {
   }
   return limit;
 }
-function inSight(p, guard) {
+function inSight({ player: p, guard, visionRange, visionSpread }) {
   const dx = p.x - guard.x;
   const dy = p.y - guard.y;
   const distance = Math.hypot(dx, dy);
   const angle = Math.atan2(dy, dx);
   const difference = Math.atan2(Math.sin(angle - guard.angle), Math.cos(angle - guard.angle));
-  return distance < VISION_RANGE && (distance < 0.55 || Math.abs(difference) < VISION_SPREAD)
+  return distance < visionRange && (distance < 0.55 || Math.abs(difference) < visionSpread)
     && visionDistance(guard, angle, distance) >= distance;
 }
 
@@ -191,8 +204,8 @@ export const cluePosition = (g) => CLUES[g.scenario.clue];
 export function targetAt(g, x, y) {
   const [cx, cy] = cluePosition(g);
   if (Math.hypot(cx - x, cy - y) < 0.67) return ['clue'];
-  const hide = HIDES.findIndex((item) => Math.hypot(item.x - x, item.y - y) < 0.73);
-  if (hide !== -1) return ['hide', hide];
+  const hide = g.hides.find((id) => Math.hypot(HIDES[id].x - x, HIDES[id].y - y) < 0.73);
+  if (hide !== undefined) return ['hide', hide];
   return ['move', Math.round(x), Math.round(y)];
 }
 
@@ -204,7 +217,7 @@ export function giveOrder(g, order) {
     targets = new Set([key(x, y)]);
   } else if (kind === 'clue' && order.length === 1) {
     targets = new Set([key(...cluePosition(g))]);
-  } else if (kind === 'hide' && order.length === 2 && Number.isInteger(x) && HIDES[x]) {
+  } else if (kind === 'hide' && order.length === 2 && g.hides.includes(x)) {
     const item = HIDES[x];
     targets = new Set(neighbors.map(([dx, dy]) => key(item.x + dx, item.y + dy)));
   } else {
@@ -281,7 +294,7 @@ export function advance(g) {
     return;
   }
   g.guests = guestCountAt(g.tick);
-  g.patrolTick += g.guard.moving ? 1 + (g.guests - 1) * 0.1 : 1;
+  g.patrolTick += g.guard.moving ? (1 + (g.guests - 1) * 0.1) * g.guardSpeed : 1;
   g.guard = guardAt(g.patrolTick, g.scenario.tutorial);
   g.rush = g.guard.rush;
   move(g);
@@ -295,7 +308,7 @@ export function advance(g) {
     [g.player.x, g.player.y] = [EXIT[0], 12];
   }
   const canBeSpotted = g.player.y < 13 && (g.carrying || g.player.x >= 10.5);
-  g.spotted = canBeSpotted && inSight(g.player, g.guard);
+  g.spotted = canBeSpotted && inSight(g);
   const detectionTicks = g.scenario.tutorial ? 56 : g.carrying ? 38 : 46;
   g.suspicion = Math.min(1, Math.max(0, g.suspicion + (g.spotted ? 1 / detectionTicks : -1 / 70)));
   if (g.suspicion < 1) return;

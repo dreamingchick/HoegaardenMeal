@@ -1,4 +1,4 @@
-import { WIDTH, HEIGHT, HZ, WEEKLY_RULESET, makeGame, advance, giveOrder, targetAt, weekStart, weeklyScenario, cluePosition } from './game.mjs';
+import { WIDTH, HEIGHT, HZ, MAX_LEVEL, LEVEL_HIDES, WEEKLY_RULESET, makeGame, advance, giveOrder, targetAt, weekStart, weeklyScenario, cluePosition } from './game.mjs';
 import { draw } from './paint.mjs';
 
 const byId = (id) => document.getElementById(id);
@@ -28,6 +28,9 @@ let rankedAttempt = false;
 let viewVersion = 0;
 let cursor;
 let previousHide;
+const savedLevel = Number(read('unlocked-level'));
+let unlockedLevel = Number.isInteger(savedLevel) && savedLevel >= 1 && savedLevel <= MAX_LEVEL ? savedLevel : 1;
+let selectedLevel = unlockedLevel;
 let owed = 0;
 let previousFrame = 0;
 
@@ -46,6 +49,19 @@ function showScene(next) {
   viewVersion++;
   scene = next;
   for (const name of ['menu', 'guide', 'result', 'board']) visible(name, name === next);
+  if (next === 'menu') showLevels();
+}
+function showLevels() {
+  visible('levelChoice', unlockedLevel > 1);
+  if (unlockedLevel === 1) return;
+  const picker = byId('levelSelect');
+  picker.replaceChildren(...Array.from({length: unlockedLevel}, (_, index) => {
+    const option = document.createElement('option');
+    option.value = String(index + 1);
+    option.textContent = option.value + '단계';
+    return option;
+  }));
+  picker.value = String(selectedLevel);
 }
 function home() {
   game = null;
@@ -53,17 +69,18 @@ function home() {
   showScene('menu');
 }
 function randomIndex(count) { return Math.floor(Math.random() * count); }
-function pickNormal() {
+function pickNormal(level) {
   if (tutorial) return { hide: 1, clue: 0, offset: 95, tutorial: true };
-  const choices = [0, 1, 2].filter((index) => index !== previousHide);
+  const choices = LEVEL_HIDES[level - 1].filter((index) => index !== previousHide);
   previousHide = choices[randomIndex(choices.length)];
-  return { hide: previousHide, clue: randomIndex(3), offset: randomIndex(420) };
+  return { hide: previousHide, clue: randomIndex(3), offset: randomIndex(420), level };
 }
-function start(mode) {
+function start(mode, level = selectedLevel) {
   kind = mode;
-  tutorial = mode === 'normal' && !read('tutorial');
+  if (mode === 'normal') selectedLevel = level;
+  tutorial = mode === 'normal' && level === 1 && !read('tutorial');
   if (mode === 'weekly') activeWeek ??= weekStart();
-  scenario = mode === 'weekly' ? weeklyScenario(activeWeek) : pickNormal();
+  scenario = mode === 'weekly' ? weeklyScenario(activeWeek) : pickNormal(level);
   rankedAttempt = mode === 'weekly' && boardOnline;
   controls = [];
   guides = new Set();
@@ -98,20 +115,32 @@ function finish() {
     save('tutorial', '1');
     previousHide = scenario.hide;
   }
-  copy('resultTitle', won ? '드디어, 따뜻한 한 끼!' : '오늘은 찬밥입니다');
+  const nextLevel = won && kind === 'normal' && game.level < MAX_LEVEL;
+  if (nextLevel && game.level === unlockedLevel) {
+    unlockedLevel++;
+    save('unlocked-level', String(unlockedLevel));
+  }
+  const completed = won && kind === 'normal' && game.level === MAX_LEVEL;
+  copy('resultTitle', completed ? '10단계까지 모두 클리어!' : won ? '드디어, 따뜻한 한 끼!' : '오늘은 찬밥입니다');
   copy('resultText', won
     ? (game.caught ? '“손님, 아까 꼬치는 두고 가셨어요!”' : '“이 한 숟갈이 먹고 싶었다니까.”')
     : '“손님, 이번엔 정말 나가 주셔야겠어요.”');
   copy('resultTime', won ? format(game.tick) : '');
   visible('resultTime', won);
+  visible('nextLevel', nextLevel);
+  if (nextLevel) copy('nextLevel', (game.level + 1) + '단계 시작');
+  copy('retry', kind === 'normal' ? game.level + '단계 다시 도전' : '다시 도전');
+  byId('retry').classList.toggle('primary', !nextLevel);
   visible('scoreForm', won && rankedAttempt);
   visible('scoreStatus', won && kind === 'weekly' && !rankedAttempt);
   if (!rankedAttempt) copy('scoreStatus', '연습 기록은 온라인 순위표에 등록되지 않습니다.');
   byId('nickname').value = read('nickname') || '';
-  byId('retry').focus();
+  byId(nextLevel ? 'nextLevel' : 'retry').focus();
 }
 function renderHud() {
   const show = !!game && scene !== 'board';
+  visible('level', show && kind === 'normal');
+  if (show && kind === 'normal') copy('level', game.level + '단계');
   visible('clock', show && kind === 'weekly');
   if (show && kind === 'weekly') copy('clock', format(game.tick));
   visible('warning', show && game.caught === 1);
@@ -235,11 +264,15 @@ byId('scoreForm').addEventListener('submit', async (event) => {
   }
 });
 byId('normal').onclick = () => start('normal');
+byId('levelSelect').onchange = (event) => { selectedLevel = Number(event.target.value); };
 byId('weekly').onclick = openBoard;
 byId('weeklyStart').onclick = () => start('weekly');
 byId('boardBack').onclick = home;
 byId('home').onclick = home;
 byId('back').onclick = home;
+byId('nextLevel').onclick = () => {
+  if (scene === 'result' && kind === 'normal' && game.mode === 'won' && game.level < MAX_LEVEL) start('normal', game.level + 1);
+};
 byId('retry').onclick = () => {
   if (kind === 'weekly' && activeWeek !== weekStart()) openBoard();
   else start(kind);
@@ -248,4 +281,5 @@ byId('guideNext').onclick = () => {
   showScene('game');
   canvas.focus();
 };
+showLevels();
 requestAnimationFrame(frame);

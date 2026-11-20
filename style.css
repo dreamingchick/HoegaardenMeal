@@ -19,7 +19,10 @@ canvas:focus-visible{outline:3px solid #ffcb75;outline-offset:-5px}
 h1{font-family:Georgia,"Batang",serif;font-size:clamp(1.65rem,5.4vw,4.55rem);line-height:1.06;letter-spacing:-.055em;margin:.45rem 0 .65rem;color:#fff0cc;filter:drop-shadow(0 2px 2px #14231d);}
 p{margin:.5rem 0 .8rem;line-height:1.5}
 .menu-copy p,.panel p{color:#fae7bf}
-button,input{font:inherit}
+button,input,select{font:inherit}
+.level-choice{display:flex;gap:.5rem;align-items:center;margin:.3rem 0 .55rem;font-size:.9rem}
+.level-choice select{background:#253c31;color:inherit;border:1px solid #a49065;border-radius:6px;padding:.25rem .45rem}
+.result-panel .buttons{flex-wrap:wrap}
 button{border:1px solid #aa9169;border-radius:7px;background:#2b4036;color:#ffedc8;font-weight:700;padding:.52rem .8rem;cursor:pointer;white-space:nowrap}
 button:hover{filter:brightness(1.16)}
 button:focus-visible,input:focus-visible{outline:2px solid #fff3c7;outline-offset:3px}

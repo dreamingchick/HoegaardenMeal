@@ -1,6 +1,6 @@
 import {
-  WIDTH, HEIGHT, SEAT, FIXTURES, wallAt, cluePosition, showVision,
-  visionDistance, VISION_SPREAD, RETURN_TICKS,
+  WIDTH, HEIGHT, SEAT, FIXTURES, HIDES, wallAt, cluePosition, showVision,
+  visionDistance, RETURN_TICKS,
 } from './game.mjs';
 
 const TILE = 36;
@@ -128,7 +128,7 @@ function fixture(c, item) {
   const w = item.w * TILE - 6;
   const h = item.h * TILE - 8;
   if (item.type === 'hide') {
-    const fill = ['#dfc5a5', '#79826a', '#a14837'][item.id];
+    const fill = ['#dfc5a5', '#79826a', '#a14837', '#608d9b', '#c49d4f', '#8d6297'][item.id];
     round(c, x, y, w, h, 4, fill, COLORS.edge);
     line(c, x + 3, y + 8, x + w - 3, y + 8, '#fff1bc55', 2);
     if (item.id === 1) {
@@ -198,8 +198,8 @@ function fieldOfView(c, g) {
   const { guard } = g;
   c.moveTo(cx(guard.x), cy(guard.y));
   for (let i = 0; i <= 44; i++) {
-    const angle = guard.angle - VISION_SPREAD + i * 2 * VISION_SPREAD / 44;
-    const distance = visionDistance(guard, angle);
+    const angle = guard.angle - g.visionSpread + i * 2 * g.visionSpread / 44;
+    const distance = visionDistance(guard, angle, g.visionRange);
     c.lineTo(cx(guard.x + distance * Math.cos(angle)), cy(guard.y + distance * Math.sin(angle)));
   }
   c.closePath();
@@ -297,6 +297,9 @@ export function draw(canvas, g, menu = false, cursor = null) {
     return;
   }
   if (!g) return;
+  for (const id of g.hides) {
+    if (id >= 3) fixture(c, { ...HIDES[id], id, w: 1, h: 1, type: 'hide' });
+  }
   if (showVision(g)) fieldOfView(c, g);
   markClue(c, g);
   const destination = g.path.at(-1) || g.step;
