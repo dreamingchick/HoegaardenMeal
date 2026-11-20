@@ -3,6 +3,7 @@ import { draw } from './paint.mjs';
 
 const byId = (id) => document.getElementById(id);
 const canvas = byId('map');
+const phonePortrait = matchMedia('(orientation: portrait) and (pointer: coarse)');
 const tickMs = 1000 / HZ;
 const api = './api/';
 const prefix = 'hoegaarden-meal:';
@@ -126,6 +127,11 @@ function renderHud() {
 function frame(now) {
   const elapsed = Math.min(140, now - (previousFrame || now));
   previousFrame = now;
+  requestAnimationFrame(frame);
+  if (phonePortrait.matches) {
+    owed = 0;
+    return;
+  }
   if (scene === 'game') {
     owed += elapsed;
     while (scene === 'game' && owed >= tickMs) {
@@ -137,10 +143,9 @@ function frame(now) {
   } else owed = 0;
   draw(canvas, game, scene === 'menu' || scene === 'board', cursor);
   renderHud();
-  requestAnimationFrame(frame);
 }
 function issue(x, y) {
-  if (scene !== 'game' || game.mode !== 'playing') return;
+  if (phonePortrait.matches || scene !== 'game' || game.mode !== 'playing') return;
   const order = targetAt(game, x, y);
   if (!giveOrder(game, order) || kind !== 'weekly') return;
   const event = [game.tick, order];

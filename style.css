@@ -1,8 +1,8 @@
 :root{color-scheme:dark;font-family:system-ui,"Malgun Gothic",sans-serif;background:#14231d;color:#faebca;font-synthesis:none}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
-body{margin:0;min-height:100dvh;display:grid;place-items:center;background:radial-gradient(ellipse at 52% 38%,#304638,#14231d 77%);padding:10px}
-.game{width:min(100%,calc((100dvh - 77px) * 2),1100px);min-width:0}
+body{--top-inset:max(10px,env(safe-area-inset-top));--bottom-inset:max(10px,env(safe-area-inset-bottom));margin:0;min-height:100dvh;display:grid;place-items:center;background:radial-gradient(ellipse at 52% 38%,#304638,#14231d 77%);padding:var(--top-inset) max(10px,env(safe-area-inset-right)) var(--bottom-inset) max(10px,env(safe-area-inset-left))}
+.game{width:min(100%,calc((100dvh - var(--top-inset) - var(--bottom-inset) - 57px) * 2),1100px);min-width:0}
 .top,.indicators,.buttons,.danger,form{display:flex;align-items:center;gap:.55rem}
 .top{justify-content:space-between;margin-bottom:.45rem;min-height:34px}
 .brand{padding:0;color:#ffebbb;background:none;border:0;text-align:left}
@@ -41,5 +41,18 @@ input{min-width:80px;width:9rem;padding:.45rem;border:1px solid #9a875f;border-r
 .danger{top:3%;left:1.7%;background:#382721e8;padding:.27rem .5rem;border-radius:7px;font-weight:750;font-size:.8rem}
 progress{width:clamp(42px,10vw,105px);height:.62rem;accent-color:#ea8458}
 footer{margin-top:.4rem;font-size:.78rem;color:#e2cc9f;text-align:center}
-@media (orientation:portrait){.game{width:100%}#rotate{display:inline!important}.menu-copy p{display:none}.kicker{font-size:.72rem}.stage{border-radius:10px}}
+.rotate-screen{display:none;text-align:center;padding:1.5rem;max-width:22rem}
+.rotate-screen h2{margin:1.2rem 0 .35rem;font-size:1.35rem}
+.rotate-screen p{margin:.35rem 0;color:#e2cc9f}
+.rotate-phone{width:66px;height:40px;border:2px solid #e8b772;border-radius:8px;display:inline-grid;place-items:center}
+.rotate-phone::after{content:"";width:3px;height:13px;background:#e8b772;border-radius:3px;justify-self:end;margin-right:4px}
+@media (orientation:portrait) and (pointer:coarse){
+  .game{display:none}
+  .rotate-screen{display:block}
+}
+@media (orientation:landscape) and (max-height:480px){
+  .game{width:min(100%,calc((100dvh - var(--top-inset) - var(--bottom-inset) - 36px) * 2),1100px)}
+  .top{min-height:30px;margin-bottom:6px}
+  footer{display:none}
+}
 @media (max-width:550px){.top{gap:.4rem}.indicators{font-size:.67rem}.brand{font-size:.86rem}.notice{font-size:.72rem}.buttons{gap:.35rem}button{font-size:.84rem;padding:.43rem .55rem}}
