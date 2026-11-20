@@ -4,7 +4,7 @@ export const HZ = 60;
 export const SEAT = [5, 8];
 const EXIT = [3, 14];
 export const RETURN_TICKS = 105;
-export const WEEKLY_RULESET = 2;
+export const WEEKLY_RULESET = 3;
 export const HIDES = [
   { x: 15, y: 3, name: '밀가루 보관함', hint: '밀가루 자국이 주방의 하얀 보관함 아래에서 끊겨 있다.' },
   { x: 26, y: 4, name: '바퀴 선반', hint: '나란히 난 바퀴 자국이 창고 위쪽의 바퀴 선반까지 이어진다.' },
@@ -99,24 +99,44 @@ export function makeGame(scenario) {
   };
 }
 
-const TUTORIAL_PATROL = [
+const PATROL_START = [
   { time: 150, x: 12, y: 4, face: [0, 1] },
   { time: 100, x: 18, y: 4 },
   { time: 140, x: 18, y: 4, face: [0, -1] },
   { time: 115, x: 20, y: 5 },
   { time: 105, x: 20, y: 5, face: [1, 0] },
+];
+const STORAGE_PATROL = [
+  { time: 150, x: 27, y: 5 },
+  { time: 70, x: 27, y: 5, face: [0, -1] },
+  { time: 85, x: 27, y: 9 },
+  { time: 85, x: 23, y: 9 },
+  { time: 25, x: 23, y: 10 },
+  { time: 65, x: 20, y: 10 },
+  { time: 110, x: 20, y: 5 },
+];
+const PATROL_END = [
   { time: 130, x: 18, y: 4 },
   { time: 205, x: 18, y: 4, face: [0, -1], rush: true },
   { time: 115, x: 12, y: 4, face: [-1, 0] },
+  { time: 85, x: 8, y: 4 },
+  { time: 85, x: 8, y: 8 },
+  { time: 65, x: 5, y: 8 },
+  { time: 60, x: 5, y: 8, face: [-1, 1] },
+  { time: 65, x: 8, y: 8 },
+  { time: 85, x: 8, y: 4 },
+  { time: 85, x: 12, y: 4 },
 ];
+const TUTORIAL_PATROL = [...PATROL_START, ...STORAGE_PATROL, ...PATROL_END];
 const PATROL = [
-  ...TUTORIAL_PATROL.slice(0, 5),
+  ...PATROL_START,
+  ...STORAGE_PATROL,
   { time: 95, x: 20, y: 9 },
   { time: 108, x: 15, y: 9 },
   { time: 55, x: 15, y: 9, face: [0, 1] },
   { time: 100, x: 20, y: 9 },
   { time: 95, x: 20, y: 5 },
-  ...TUTORIAL_PATROL.slice(5),
+  ...PATROL_END,
 ];
 const patrolLength = (route) => route.reduce((sum, part) => sum + part.time, 0);
 const TUTORIAL_PERIOD = patrolLength(TUTORIAL_PATROL);
@@ -142,8 +162,7 @@ function guardAt(tick, tutorial) {
 
 export const VISION_RANGE = 6.2;
 export const VISION_SPREAD = Math.PI / 3.3;
-export const danger = (p) => p.x >= 10.5 && p.y < 13;
-export const showVision = (p) => p.x >= 8.5 && p.y < 13;
+export const showVision = ({player, carrying}) => player.y < 13 && (carrying || player.x >= 8.5);
 export function visionDistance(guard, angle, limit = VISION_RANGE) {
   for (let d = 0.38; d < limit; d += 0.1) {
     const x = Math.round(guard.x + Math.cos(angle) * d);
@@ -210,7 +229,7 @@ function act(g, order) {
     if (!g.seenClue) say(g, '먼저 가게에 남은 흔적을 조사하자.');
     else {
       g.carrying = true;
-      say(g, '버너를 찾았다. 가게 출구를 통해 돌아가자!', 220);
+      say(g, '버너를 찾았다! 홀에서도 베짱이의 시야를 피해 출구로 가자.', 220);
     }
   } else {
     g.action = { until: g.tick + 54 };
@@ -267,7 +286,8 @@ export function advance(g) {
     say(g, '버너를 찾은 다음 미용실로 돌아가자.');
     [g.player.x, g.player.y] = [EXIT[0], 12];
   }
-  g.spotted = danger(g.player) && inSight(g.player, g.guard);
+  const canBeSpotted = g.player.y < 13 && (g.carrying || g.player.x >= 10.5);
+  g.spotted = canBeSpotted && inSight(g.player, g.guard);
   const detectionTicks = g.scenario.tutorial ? 56 : g.carrying ? 38 : 46;
   g.suspicion = Math.min(1, Math.max(0, g.suspicion + (g.spotted ? 1 / detectionTicks : -1 / 70)));
   if (g.suspicion < 1) return;
@@ -276,6 +296,7 @@ export function advance(g) {
     g.mode = 'lost';
     return;
   }
+  const warning = g.carrying ? '“손님, 그건 제 버너예요!”' : '“손님, 이쪽은 직원만 들어올 수 있어요!”';
   [g.player.x, g.player.y] = SEAT;
   g.player.facing = 'down';
   g.suspicion = 0;
@@ -283,5 +304,5 @@ export function advance(g) {
   g.carrying = false;
   g.path = [];
   g.step = g.interaction = g.action = null;
-  say(g, '“손님, 이쪽은 주방이에요!” 베짱이가 자리로 돌려보냈다.', 260);
+  say(g, warning + ' 베짱이가 자리로 돌려보냈다.', 260);
 }

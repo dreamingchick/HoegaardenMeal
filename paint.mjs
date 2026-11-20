@@ -289,7 +289,7 @@ export function draw(canvas, g, menu = false, cursor = null) {
     return;
   }
   if (!g) return;
-  if (showVision(g.player)) fieldOfView(c, g);
+  if (showVision(g)) fieldOfView(c, g);
   markClue(c, g);
   const destination = g.path.at(-1) || g.step;
   if (destination) oval(c, cx(destination[0]), cy(destination[1]), 5, 4, '#fff2c1c9');

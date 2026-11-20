@@ -87,7 +87,7 @@ function guideNearPlayer() {
   if (!game.seenClue && !guides.has('clue') && Math.hypot(x - p.x, y - p.y) < 2.5) {
     guide('clue', '바닥에 수상한 흔적이 있어요', '동그라미 안의 흔적을 누르면 가까이 가서 조사합니다. 버너를 집으려면 먼저 이 흔적을 확인해야 해요.');
   } else if (!guides.has('danger') && p.x > 8.5) {
-    guide('danger', '주방과 창고는 손님 출입 금지', '베짱이의 시야가 바닥에 표시됩니다. 의심 게이지가 다 차기 전에 시야를 벗어나세요. 주문이 몰리면 베짱이가 화로에 오래 머물러요.');
+    guide('danger', '베짱이의 시야를 피하세요', '베짱이는 홀과 창고도 오갑니다. 홀에서는 빈손이면 안전하지만, 버너를 들면 홀에서도 들킬 수 있어요. 의심 게이지가 차기 전에 시야를 벗어나세요.');
   }
 }
 function finish() {
