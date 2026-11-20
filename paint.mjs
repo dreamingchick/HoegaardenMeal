@@ -11,7 +11,7 @@ const COLORS = {
   mint: '#6d8e78', gold: '#ffdb93', red: '#a4493c',
 };
 const assets = Object.fromEntries(
-  ['hairdresser', 'carrying', 'chef', 'chef-back'].map((name) => {
+  ['hairdresser', 'chef', 'chef-back', 'walk-side', 'walk-up', 'walk-down', 'carry-side', 'carry-up', 'carry-down'].map((name) => {
     const sprite = new Image();
     sprite.src = './assets/' + name + '.webp';
     return [name, sprite];
@@ -242,7 +242,7 @@ function drawReturn(c, progress) {
   }
   const x = 354 + progress * 510;
   const y = 348 + Math.sin(progress * Math.PI) * 51;
-  actor(c, assets.carrying, x, y, 92, true);
+  actor(c, assets['carry-side'], x, y, 92);
 }
 function drawDinner(c) {
   c.fillStyle = '#405b4e';
@@ -298,13 +298,14 @@ export function draw(canvas, g, menu = false, cursor = null) {
     c.lineWidth = 2;
     c.strokeRect(cursor[0] * TILE + 3, cursor[1] * TILE + 3, TILE - 6, TILE - 6);
   }
-  const sprite = g.carrying ? assets.carrying : assets.hairdresser;
   const p = g.player;
+  const pose = p.facing === 'up' || p.facing === 'down' ? p.facing : 'side';
+  const sprite = assets[(g.carrying ? 'carry-' : 'walk-') + pose];
   const guard = g.guard;
   const back = Math.sin(guard.angle) < -0.35;
   const bob = g.step ? Math.abs(Math.sin(g.tick / 4)) * 2.5 : 0;
   const figures = [
-    { sprite, x: p.x, y: p.y, height: 61, flip: p.facing > 0, bob },
+    { sprite, x: p.x, y: p.y, height: 61, flip: p.facing === 'left', bob },
     { sprite: assets[back ? 'chef-back' : 'chef'], x: guard.x, y: guard.y, height: 64, flip: Math.cos(guard.angle) < -0.25, bob: 0 },
   ];
   for (const figure of figures.sort((a, b) => a.y - b.y)) {

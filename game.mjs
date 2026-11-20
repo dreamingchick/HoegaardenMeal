@@ -90,7 +90,7 @@ export function weeklyScenario(week) {
 
 export function makeGame(scenario) {
   return {
-    scenario, player: { x: SEAT[0], y: SEAT[1], facing: 1 },
+    scenario, player: { x: SEAT[0], y: SEAT[1], facing: 'down' },
     mode: 'playing', tick: 0, suspicion: 0, caught: 0, seenClue: false,
     carrying: false, path: [], step: null, interaction: null, action: null,
     notice: '', noticeUntil: 0, rush: false, spotted: false,
@@ -223,7 +223,8 @@ function move(g) {
   const dy = y - p.y;
   const distance = Math.hypot(dx, dy);
   const speed = (g.carrying ? 2.25 : 3.5) / HZ;
-  if (Math.abs(dx) > 0.01) p.facing = Math.sign(dx);
+  if (dx !== 0) p.facing = dx > 0 ? 'right' : 'left';
+  else if (dy !== 0) p.facing = dy > 0 ? 'down' : 'up';
   if (distance <= speed) {
     p.x = x;
     p.y = y;
@@ -262,6 +263,7 @@ export function advance(g) {
     return;
   }
   [g.player.x, g.player.y] = SEAT;
+  g.player.facing = 'down';
   g.suspicion = 0;
   g.spotted = false;
   g.carrying = false;
