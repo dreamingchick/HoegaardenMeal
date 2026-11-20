@@ -23,4 +23,11 @@ node server.mjs
 
 매주 월요일 00:00 한국 시간에 새 문제가 열립니다. 같은 주에는 은닉 장소, 흔적, 베짱이 동선과 주문 타이밍이 동일합니다. 서버가 플레이 입력을 재현해 클리어를 확인하고 브라우저별로 해당 주의 최고 기록 하나를 보관합니다. 순위표는 기본적으로 서버 옆의 `.weekly-scores.json`에 저장합니다. `HOEGAARDEN_SCORES_PATH`로 쓰기 가능한 파일 경로를 지정할 수 있습니다.
 
-정적 호스팅에서도 일반판과 주간 문제 연습은 실행됩니다. 온라인 순위표는 Node 서버가 필요합니다. 순위표 저장은 단일 프로토타입 서버 기준입니다.
+정적 호스팅에서도 일반판과 주간 문제 연습은 실행됩니다. 온라인 순위표는 로컬 Node 서버 또는 공개 Worker를 통해 제공됩니다.
+
+## 공개 배포
+
+- 공개 주소는 https://hoegaarden-meal.garu-arcade.workers.dev 입니다.
+- `node scripts/build-worker.mjs`를 실행하면 `dist/`에 Cloudflare Worker 배포 모듈 4개가 생성됩니다.
+- Worker의 진입점은 `worker.mjs`입니다. `hoegaarden-meal-scores` D1 데이터베이스를 `SCORES`로 바인딩하고, 최초 배포 전에 `schema.sql`을 적용합니다.
+- 운영 Worker는 같은 브라우저와 주차의 최고 기록 하나를 D1에 저장합니다. 플레이 규칙 버전이 바뀌면 새 순위표를 사용합니다.
