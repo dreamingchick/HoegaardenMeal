@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#162620">
+<title>호가든의 따뜻한 한 끼</title>
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<main class="game">
+  <header class="top">
+    <button id="home" class="brand" type="button">호가든의 따뜻한 한 끼</button>
+    <div class="indicators" aria-label="플레이 상태">
+      <span id="phase">버너 찾기</span>
+      <span id="warning" class="warning" hidden>경고 1회</span>
+      <time id="clock" hidden>0:00.00</time>
+    </div>
+  </header>
+  <div class="stage">
+    <canvas id="map" width="1080" height="540" tabindex="0" aria-label="꼬치구이 가게 지도. 화면을 터치하거나 방향키로 지점을 고른 뒤 Enter를 누르세요."></canvas>
+    <div id="rush" class="rush" hidden>주문이 몰렸어요!</div>
+    <div id="notice" class="notice" role="status" hidden></div>
+    <div id="danger" class="danger" hidden><span>의심</span><progress id="meter" max="1" value="0"></progress></div>
+    <section id="menu" class="overlay">
+      <div class="menu-copy">
+        <span class="kicker">베짱이네 꼬치구이</span>
+        <h1>호가든의<br>따뜻한 한 끼</h1>
+        <p>한 끼만 따뜻하게 먹고 싶었을 뿐인데.<br>옆집 꼬치구이 가게에 버너가 숨겨져 있다.</p>
+        <div class="buttons">
+          <button type="button" id="normal" class="primary">가게 들어가기</button>
+          <button type="button" id="weekly">주간 기록전</button>
+        </div>
+      </div>
+    </section>
+    <section id="guide" class="overlay compact" hidden>
+      <div class="panel">
+        <h2 id="guideTitle"></h2><p id="guideBody"></p>
+        <button type="button" id="guideNext" class="primary">계속하기</button>
+      </div>
+    </section>
+    <section id="result" class="overlay compact" hidden>
+      <div class="panel result-panel">
+        <h2 id="resultTitle"></h2><p id="resultText"></p>
+        <p id="resultTime" class="result-time" hidden></p>
+        <form id="scoreForm" hidden>
+          <label for="nickname">순위표 닉네임</label>
+          <input id="nickname" maxlength="16" required>
+          <button type="submit">기록 등록</button>
+        </form>
+        <p id="scoreStatus" role="status" hidden></p>
+        <div class="buttons">
+          <button type="button" id="retry" class="primary">다시 도전</button>
+          <button type="button" id="back">처음 화면</button>
+        </div>
+      </div>
+    </section>
+    <section id="board" class="overlay compact" hidden>
+      <div class="panel board-panel">
+        <h2>주간 기록전</h2><p id="weekLabel"></p>
+        <ol id="scores" aria-label="주간 순위"></ol><p id="boardStatus" role="status"></p>
+        <div class="buttons">
+          <button type="button" id="weeklyStart" class="primary">도전 시작</button>
+          <button type="button" id="boardBack">돌아가기</button>
+        </div>
+      </div>
+    </section>
+  </div>
+  <footer>바닥을 눌러 이동 · 물건을 눌러 조사 <span id="rotate" hidden> · 가로로 돌리면 지도가 더 넓게 보입니다</span></footer>
+</main>
+<script type="module" src="./play.mjs"></script>
+</body>
+</html>
