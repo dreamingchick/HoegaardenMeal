@@ -3,7 +3,7 @@ import { draw } from './paint.mjs';
 
 const byId = (id) => document.getElementById(id);
 const canvas = byId('map');
-const phonePortrait = matchMedia('(orientation: portrait) and (pointer: coarse)');
+const portrait = matchMedia('(orientation: portrait)');
 const tickMs = 1000 / HZ;
 const api = './api/';
 const prefix = 'hoegaarden-meal:';
@@ -127,11 +127,6 @@ function renderHud() {
 function frame(now) {
   const elapsed = Math.min(140, now - (previousFrame || now));
   previousFrame = now;
-  requestAnimationFrame(frame);
-  if (phonePortrait.matches) {
-    owed = 0;
-    return;
-  }
   if (scene === 'game') {
     owed += elapsed;
     while (scene === 'game' && owed >= tickMs) {
@@ -143,9 +138,10 @@ function frame(now) {
   } else owed = 0;
   draw(canvas, game, scene === 'menu' || scene === 'board', cursor);
   renderHud();
+  requestAnimationFrame(frame);
 }
 function issue(x, y) {
-  if (phonePortrait.matches || scene !== 'game' || game.mode !== 'playing') return;
+  if (scene !== 'game' || game.mode !== 'playing') return;
   const order = targetAt(game, x, y);
   if (!giveOrder(game, order) || kind !== 'weekly') return;
   const event = [game.tick, order];
@@ -155,10 +151,13 @@ function issue(x, y) {
 canvas.addEventListener('pointerdown', (event) => {
   if (!event.isPrimary || event.button !== 0) return;
   const bounds = canvas.getBoundingClientRect();
-  const x = (event.clientX - bounds.left) * WIDTH / bounds.width - 0.5;
-  const y = (event.clientY - bounds.top) * HEIGHT / bounds.height - 0.5;
+  if (!bounds.width || !bounds.height) return;
+  const across = (event.clientX - bounds.left) / bounds.width;
+  const down = (event.clientY - bounds.top) / bounds.height;
+  // The stage turns clockwise in a portrait viewport, so undo that turn for taps.
+  const [x, y] = portrait.matches ? [down, 1 - across] : [across, down];
   cursor = null;
-  issue(x, y);
+  issue(x * WIDTH - 0.5, y * HEIGHT - 0.5);
 });
 canvas.addEventListener('keydown', (event) => {
   if (scene !== 'game') return;
